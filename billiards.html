@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>بازی بیلیارد ۸ توپ</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top, #1b2838 0%, #0d131a 100%);
+      color: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 1040px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Header & Controls */
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 10px 16px;
+      backdrop-filter: blur(8px);
+    }
+
+    .title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-group h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ffd166;
+      letter-spacing: -0.3px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f0f4f8;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 7px 13px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .btn.active {
+      background: #06d6a0;
+      color: #0b131a;
+      border-color: #06d6a0;
+      font-weight: 700;
+    }
+
+    .btn.primary {
+      background: #ffd166;
+      color: #141b24;
+      border-color: #ffd166;
+      font-weight: 700;
+    }
+
+    .btn.primary:hover {
+      background: #ffda85;
+    }
+
+    /* Scoreboard */
+    .scoreboard {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 10px 16px;
+    }
+
+    .player-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      background: rgba(255, 255, 255, 0.03);
+      transition: all 0.25s ease;
+    }
+
+    .player-card.active-turn {
+      border-color: #06d6a0;
+      background: rgba(6, 214, 160, 0.1);
+      box-shadow: 0 0 18px rgba(6, 214, 160, 0.18);
+    }
+
+    .player-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .player-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .player-group-badge {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+    }
+
+    .ball-tray {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-height: 22px;
+      align-items: center;
+    }
+
+    .mini-ball {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #111;
+      position: relative;
+      box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .mini-ball.striped {
+      background: #fff !important;
+      overflow: hidden;
+    }
+
+    .mini-ball.striped::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 4px;
+      bottom: 4px;
+      background: var(--ball-color);
+    }
+
+    .mini-ball span {
+      position: relative;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.9);
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .status-center {
+      text-align: center;
+      min-width: 170px;
+    }
+
+    .status-text {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #ffd166;
+    }
+
+    .sub-status {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+
+    /* Table Wrapper */
+    .table-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2 / 1.08;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 22px 55px rgba(0, 0, 0, 0.65);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    /* Power & Help Footer */
+    .bottom-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+    }
+
+    .power-meter-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 220px;
+    }
+
+    .power-bar-bg {
+      flex: 1;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .power-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #06d6a0, #ffd166, #ef476f);
+      border-radius: 999px;
+      transition: width 0.04s linear;
+    }
+
+    /* Overlay Modal for Game Over */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 13, 20, 0.82);
+      backdrop-filter: blur(5px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      z-index: 10;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .overlay.visible {
+      display: flex;
+    }
+
+    .overlay h2 {
+      font-size: 2rem;
+      color: #ffd166;
+    }
+
+    .overlay p {
+      font-size: 1rem;
+      color: #e2e8f0;
+    }
+
+    @media (max-width: 720px) {
+      .scoreboard {
+        grid-template-columns: 1fr;
+      }
+      .status-center {
+        order: -1;
+      }
+      .top-bar {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="top-bar">
+      <div class="title-group">
+        <h1>🎱 بیلیارد ۸ توپ</h1>
+      </div>
+      <div class="controls">
+        <button id="btnMode2P" class="btn active">دو نفره</button>
+        <button id="btnModeAI" class="btn">با هوش مصنوعی</button>
+        <button id="btnSound" class="btn">🔊 صدا: روشن</button>
+        <button id="btnRestart" class="btn primary">شروع مجدد</button>
+      </div>
+    </div>
+
+    <div class="scoreboard">
+      <div id="p1Card" class="player-card active-turn">
+        <div class="player-header">
+          <span id="p1Name" class="player-name">بازیکن ۱</span>
+          <span id="p1Group" class="player-group-badge">نامشخص</span>
+        </div>
+        <div id="p1Balls" class="ball-tray"></div>
+      </div>
+
+      <div class="status-center">
+        <div id="statusText" class="status-text">نوبت بازیکن ۱</div>
+        <div id="subStatus" class="sub-status">برای ضربه، کلیک کنید و به عقب بکشید</div>
+      </div>
+
+      <div id="p2Card" class="player-card">
+        <div class="player-header">
+          <span id="p2Name" class="player-name">بازیکن ۲</span>
+          <span id="p2Group" class="player-group-badge">نامشخص</span>
+        </div>
+        <div id="p2Balls" class="ball-tray"></div>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <canvas id="poolCanvas" width="1000" height="540"></canvas>
+      <div id="gameOverOverlay" class="overlay">
+        <h2 id="winnerTitle">بازیکن ۱ برنده شد!</h2>
+        <p id="winnerReason">توپ ۸ با موفقیت وارد سوراخ شد.</p>
+        <button id="btnPlayAgain" class="btn primary" style="padding: 10px 24px; font-size: 1rem;">بازی دوباره</button>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <div>🎯 <strong>راهنما:</strong> نشانه بگیرید، دکمه ماوس را نگه دارید و به عقب بکشید، سپس رها کنید.</div>
+      <div class="power-meter-wrap">
+        <span>قدرت ضربه:</span>
+        <div class="power-bar-bg">
+          <div id="powerFill" class="power-bar-fill"></div>
+        </div>
+        <span id="powerPct" style="min-width: 34px; text-align: left;">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById('poolCanvas');
+      const ctx = canvas.getContext('2d');
+
+      // UI Elements
+      const btnMode2P = document.getElementById('btnMode2P');
+      const btnModeAI = document.getElementById('btnModeAI');
+      const btnSound = document.getElementById('btnSound');
+      const btnRestart = document.getElementById('btnRestart');
+      const btnPlayAgain = document.getElementById('btnPlayAgain');
+      const p1Card = document.getElementById('p1Card');
+      const p2Card = document.getElementById('p2Card');
+      const p1NameEl = document.getElementById('p1Name');
+      const p2NameEl = document.getElementById('p2Name');
+      const p1GroupEl = document.getElementById('p1Group');
+      const p2GroupEl = document.getElementById('p2Group');
+      const p1BallsEl = document.getElementById('p1Balls');
+      const p2BallsEl = document.getElementById('p2Balls');
+      const statusTextEl = document.getElementById('statusText');
+      const subStatusEl = document.getElementById('subStatus');
+      const powerFillEl = document.getElementById('powerFill');
+      const powerPctEl = document.getElementById('powerPct');
+      const gameOverOverlay = document.getElementById('gameOverOverlay');
+      const winnerTitleEl = document.getElementById('winnerTitle');
+      const winnerReasonEl = document.getElementById('winnerReason');
+
+      // Table Dimensions (logical 1000 x 540)
+      const W = 1000;
+      const H = 540;
+      const RAIL = 46;
+      const PLAY_X = RAIL;
+      const PLAY_Y = RAIL;
+      const PLAY_W = W - RAIL * 2;
+      const PLAY_H = H - RAIL * 2;
+
+      const BALL_R = 13.5;
+      const POCKET_R = 23;
+      const FRICTION = 0.9885;
+      const MIN_SPEED = 0.055;
+      const MAX_POWER = 25;
+      const SUBSTEPS = 6;
+
+      // Pockets
+      const pockets = [
+        { x: PLAY_X + 4, y: PLAY_Y + 4 },
+        { x: PLAY_X + PLAY_W / 2, y: PLAY_Y - 3 },
+        { x: PLAY_X + PLAY_W - 4, y: PLAY_Y + 4 },
+        { x: PLAY_X + 4, y: PLAY_Y + PLAY_H - 4 },
+        { x: PLAY_X + PLAY_W / 2, y: PLAY_Y + PLAY_H + 3 },
+        { x: PLAY_X + PLAY_W - 4, y: PLAY_Y + PLAY_H - 4 }
+      ];
+
+      // Ball Colors (1-15)
+      const BALL_COLORS = {
+        0: '#f8fafc', // Cue
+        1: '#facc15', // Yellow
+        2: '#2563eb', // Blue
+        3: '#dc2626', // Red
+        4: '#7c3aed', // Purple
+        5: '#f97316', // Orange
+        6: '#16a34a', // Green
+        7: '#991b1b', // Maroon
+        8: '#111827', // Black
+        9: '#facc15',
+        10: '#2563eb',
+        11: '#dc2626',
+        12: '#7c3aed',
+        13: '#f97316',
+        14: '#16a34a',
+        15: '#991b1b'
+      };
+
+      // Audio Synthesizer (Web Audio API)
+      let soundEnabled = true;
+      let audioCtx = null;
+
+      function ensureAudio() {
+        if (!soundEnabled) return null;
+        if (!audioCtx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) audioCtx = new Ctx();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      function playSound(type, intensity = 0.5) {
+        const ctxA = ensureAudio();
+        if (!ctxA) return;
+        const now = ctxA.currentTime;
+        const vol = Math.min(1, Math.max(0.05, intensity));
+
+        if (type === 'hit') {
+          const osc = ctxA.createOscillator();
+          const gain = ctxA.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(950 + Math.random() * 250, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.045);
+          gain.gain.setValueAtTime(vol * 0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.connect(gain);
+          gain.connect(ctxA.destination);
+          osc.start(now);
+          osc.stop(now + 0.055);
+        } else if (type === 'cue') {
+          const osc = ctxA.createOscillator();
+          const gain = ctxA.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(280, now);
+          osc.frequency.exponentialRampToValueAtTime(90, now + 0.07);
+          gain.gain.setValueAtTime(vol * 0.5, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.connect(gain);
+          gain.connect(ctxA.destination);
+          osc.start(now);
+          osc.stop(now + 0.085);
+        } else if (type === 'rail') {
+          const osc = ctxA.createOscillator();
+          const gain = ctxA.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.exponentialRampToValueAtTime(55, now + 0.08);
+          gain.gain.setValueAtTime(vol * 0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.connect(gain);
+          gain.connect(ctxA.destination);
+          osc.start(now);
+          osc.stop(now + 0.095);
+        } else if (type === 'pocket') {
+          const osc = ctxA.createOscillator();
+          const gain = ctxA.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(60, now + 0.18);
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          osc.connect(gain);
+          gain.connect(ctxA.destination);
+          osc.start(now);
+          osc.stop(now + 0.21);
+        }
+      }
+
+      // Game State
+      let gameMode = '2p'; // '2p' or 'ai'
+      let balls = [];
+      let currentPlayer = 1; // 1 or 2
+      let playerGroups = { 1: null, 2: null }; // 'solid' or 'stripe'
+      let isMoving = false;
+      let ballInHand = false;
+      let gameOver = false;
+      let pocketedThisTurn = [];
+      let firstHitBall = null;
+      let aiThinking = false;
+
+      // Aiming & Drag State
+      let mouse = { x: W / 2, y: H / 2 };
+      let aimAngle = 0;
+      let isDragging = false;
+      let dragStart = { x: 0, y: 0 };
+      let currentPower = 0;
+
+      function createBall(id, x, y) {
+        return {
+          id,
+          x,
+          y,
+          vx: 0,
+          vy: 0,
+          pocketed: false,
+          color: BALL_COLORS[id],
+          type: id === 0 ? 'cue' : id === 8 ? 'eight' : id < 8 ? 'solid' : 'stripe'
+        };
+      }
+
+      function initGame() {
+        balls = [];
+        currentPlayer = 1;
+        playerGroups = { 1: null, 2: null };
+        isMoving = false;
+        ballInHand = false;
+        gameOver = false;
+        pocketedThisTurn = [];
+        firstHitBall = null;
+        isDragging = false;
+        currentPower = 0;
+        aiThinking = false;
+        gameOverOverlay.classList.remove('visible');
+
+        // Cue ball
+        balls.push(createBall(0, PLAY_X + PLAY_W * 0.25, PLAY_Y + PLAY_H / 2));
+
+        // Standard 8-ball triangle rack
+        const startX = PLAY_X + PLAY_W * 0.72;
+        const startY = PLAY_Y + PLAY_H / 2;
+        const dx = BALL_R * Math.sqrt(3) + 0.8;
+        const dy = BALL_R * 2 + 0.8;
+
+        // Order: 1 at apex, 8 in center, mixed solids & stripes, one solid & one stripe in back corners
+        const rackOrder = [
+          1,
+          9, 2,
+          3, 8, 10,
+          11, 4, 12, 5,
+          6, 13, 7, 14, 15
+        ];
+
+        let idx = 0;
+        for (let row = 0; row < 5; row++) {
+          for (let col = 0; col <= row; col++) {
+            const bx = startX + row * dx;
+            const by = startY - (row * dy) / 2 + col * dy;
+            balls.push(createBall(rackOrder[idx++], bx, by));
+          }
+        }
+
+        updateUI('نوبت بازیکن ۱', 'برای ضربه، کلیک کنید و به عقب بکشید');
+      }
+
+      function getCueBall() {
+        return balls[0];
+      }
+
+      function getPlayerName(p) {
+        if (p === 1) return 'بازیکن ۱';
+        return gameMode === 'ai' ? 'هوش مصنوعی' : 'بازیکن ۲';
+      }
+
+      function groupLabel(g) {
+        if (g === 'solid') return 'توپ‌های ساده (۱ تا ۷)';
+        if (g === 'stripe') return 'توپ‌های خط‌دار (۹ تا ۱۵)';
+        return 'نامشخص';
+      }
+
+      function updateUI(mainMsg, subMsg) {
+        p1NameEl.textContent = getPlayerName(1);
+        p2NameEl.textContent = getPlayerName(2);
+        p1GroupEl.textContent = groupLabel(playerGroups[1]);
+        p2GroupEl.textContent = groupLabel(playerGroups[2]);
+
+        p1Card.classList.toggle('active-turn', currentPlayer === 1 && !gameOver);
+        p2Card.classList.toggle('active-turn', currentPlayer === 2 && !gameOver);
+
+        if (mainMsg) statusTextEl.textContent = mainMsg;
+        if (subMsg !== undefined) subStatusEl.textContent = subMsg;
+
+        renderBallTray(p1BallsEl, playerGroups[1]);
+        renderBallTray(p2BallsEl, playerGroups[2]);
+      }
+
+      function renderBallTray(container, group) {
+        container.innerHTML = '';
+        if (!group) return;
+        const remaining = balls.filter(b => b.type === group && !b.pocketed);
+        remaining.forEach(b => {
+          const el = document.createElement('div');
+          el.className = 'mini-ball' + (b.type === 'stripe' ? ' striped' : '');
+          el.style.background = b.color;
+          el.style.setProperty('--ball-color', b.color);
+          el.innerHTML = `<span>${b.id}</span>`;
+          container.appendChild(el);
+        });
+        if (remaining.length === 0) {
+          const b8 = balls.find(b => b.id === 8 && !b.pocketed);
+          if (b8) {
+            const el = document.createElement('div');
+            el.className = 'mini-ball';
+            el.style.background = '#111827';
+            el.innerHTML = `<span>8</span>`;
+            container.appendChild(el);
+          }
+        }
+      }
+
+      function setPowerUI(pct) {
+        const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+        powerFillEl.style.width = clamped + '%';
+        powerPctEl.textContent = clamped + '%';
+      }
+
+      function endGame(winner, reason) {
+        gameOver = true;
+        winnerTitleEl.textContent = `${getPlayerName(winner)} برنده شد! 🏆`;
+        winnerReasonEl.textContent = reason;
+        gameOverOverlay.classList.add('visible');
+        updateUI(`${getPlayerName(winner)} برنده شد!`, reason);
+      }
+
+      function isPositionValidForCue(x, y) {
+        if (x < PLAY_X + BALL_R + 2 || x > PLAY_X + PLAY_W - BALL_R - 2) return false;
+        if (y < PLAY_Y + BALL_R + 2 || y > PLAY_Y + PLAY_H - BALL_R - 2) return false;
+        for (let i = 1; i < balls.length; i++) {
+          const b = balls[i];
+          if (b.pocketed) continue;
+          const dist = Math.hypot(x - b.x, y - b.y);
+          if (dist < BALL_R * 2 + 2) return false;
+        }
+        return true;
+      }
+
+      // Physics Step
+      function updatePhysics() {
+        if (!isMoving) return;
+
+        for (let step = 0; step < SUBSTEPS; step++) {
+          // Move balls
+          for (const b of balls) {
+            if (b.pocketed) continue;
+            b.x += b.vx / SUBSTEPS;
+            b.y += b.vy / SUBSTEPS;
+
+            // Check pockets first
+            let dropped = false;
+            for (const p of pockets) {
+              if (Math.hypot(b.x - p.x, b.y - p.y) < POCKET_R) {
+                b.pocketed = true;
+                b.vx = 0;
+                b.vy = 0;
+                pocketedThisTurn.push(b);
+                playSound('pocket', 0.8);
+                dropped = true;
+                break;
+              }
+            }
+            if (dropped) continue;
+
+            // Cushion collisions
+            if (b.x - BALL_R < PLAY_X) {
+              b.x = PLAY_X + BALL_R;
+              b.vx = Math.abs(b.vx) * 0.82;
+              playSound('rail', Math.abs(b.vx) / 14);
+            } else if (b.x + BALL_R > PLAY_X + PLAY_W) {
+              b.x = PLAY_X + PLAY_W - BALL_R;
+              b.vx = -Math.abs(b.vx) * 0.82;
+              playSound('rail', Math.abs(b.vx) / 14);
+            }
+
+            if (b.y - BALL_R < PLAY_Y) {
+              b.y = PLAY_Y + BALL_R;
+              b.vy = Math.abs(b.vy) * 0.82;
+              playSound('rail', Math.abs(b.vy) / 14);
+            } else if (b.y + BALL_R > PLAY_Y + PLAY_H) {
+              b.y = PLAY_Y + PLAY_H - BALL_R;
+              b.vy = -Math.abs(b.vy) * 0.82;
+              playSound('rail', Math.abs(b.vy) / 14);
+            }
+          }
+
+          // Ball-to-ball collisions
+          for (let i = 0; i < balls.length; i++) {
+            const a = balls[i];
+            if (a.pocketed) continue;
+            for (let j = i + 1; j < balls.length; j++) {
+              const b = balls[j];
+              if (b.pocketed) continue;
+
+              const dx = b.x - a.x;
+              const dy = b.y - a.y;
+              const dist = Math.hypot(dx, dy);
+              const minDist = BALL_R * 2;
+
+              if (dist < minDist && dist > 0.0001) {
+                // Record first ball hit by cue
+                if (firstHitBall === null) {
+                  if (a.id === 0) firstHitBall = b;
+                  else if (b.id === 0) firstHitBall = a;
+                }
+
+                const nx = dx / dist;
+                const ny = dy / dist;
+
+                // Separate overlapping balls
+                const overlap = (minDist - dist) / 2;
+                a.x -= nx * overlap;
+                a.y -= ny * overlap;
+                b.x += nx * overlap;
+                b.y += ny * overlap;
+
+                // Relative velocity along normal
+                const dvx = a.vx - b.vx;
+                const dvy = a.vy - b.vy;
+                const relVel = dvx * nx + dvy * ny;
+
+                if (relVel > 0) {
+                  const restitution = 0.94;
+                  const impulse = relVel * restitution;
+                  a.vx -= impulse * nx;
+                  a.vy -= impulse * ny;
+                  b.vx += impulse * nx;
+                  b.vy += impulse * ny;
+
+                  if (relVel > 0.4) {
+                    playSound('hit', relVel / 14);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Apply friction once per frame
+        let anyMoving = false;
+        for (const b of balls) {
+          if (b.pocketed) continue;
+          b.vx *= FRICTION;
+          b.vy *= FRICTION;
+          const speed = Math.hypot(b.vx, b.vy);
+          if (speed < MIN_SPEED) {
+            b.vx = 0;
+            b.vy = 0;
+          } else {
+            anyMoving = true;
+          }
+        }
+
+        if (!anyMoving) {
+          isMoving = false;
+          evaluateTurn();
+        }
+      }
+
+      // Evaluate 8-Ball Rules after balls stop
+      function evaluateTurn() {
+        const cue = getCueBall();
+        const otherPlayer = currentPlayer === 1 ? 2 : 1;
+        const cueScratched = pocketedThisTurn.some(b => b.id === 0);
+        const eightPocketed = pocketedThisTurn.some(b => b.id === 8);
+        const myGroup = playerGroups[currentPlayer];
+
+        // Check if 8-ball was pocketed
+        if (eightPocketed) {
+          const remainingMine = myGroup
+            ? balls.filter(b => b.type === myGroup && !b.pocketed).length
+            : 1;
+          if (cueScratched || remainingMine > 0) {
+            endGame(otherPlayer, `${getPlayerName(currentPlayer)} توپ ۸ را زودهنگام یا با خطا وارد سوراخ کرد.`);
+          } else {
+            endGame(currentPlayer, 'توپ ۸ با موفقیت وارد سوراخ شد!');
+          }
+          return;
+        }
+
+        // Assign groups if open table and a solid/stripe was pocketed without scratch
+        const nonCuePocketed = pocketedThisTurn.filter(b => b.id !== 0 && b.id !== 8);
+        let keptTurn = false;
+        let foul = cueScratched;
+
+        if (!foul && firstHitBall === null) {
+          foul = true; // Didn't hit any ball
+        }
+
+        if (!foul && myGroup === null && nonCuePocketed.length > 0) {
+          const firstType = nonCuePocketed[0].type;
+          playerGroups[currentPlayer] = firstType;
+          playerGroups[otherPlayer] = firstType === 'solid' ? 'stripe' : 'solid';
+          keptTurn = true;
+        } else if (!foul && myGroup !== null) {
+          // Check if player pocketed at least one of their own group
+          if (nonCuePocketed.some(b => b.type === myGroup)) {
+            keptTurn = true;
+          }
+        }
+
+        if (foul) {
+          currentPlayer = otherPlayer;
+          if (cueScratched) {
+            cue.pocketed = false;
+            cue.x = PLAY_X + PLAY_W * 0.25;
+            cue.y = PLAY_Y + PLAY_H / 2;
+            ballInHand = true;
+          }
+          const msg = cueScratched
+            ? `خطا! توپ سفید وارد سوراخ شد — نوبت ${getPlayerName(currentPlayer)}`
+            : `خطا! هیچ توپی لمس نشد — نوبت ${getPlayerName(currentPlayer)}`;
+          const sub = ballInHand
+            ? 'توپ سفید را در محل دلخواه روی میز قرار دهید و کلیک کنید'
+            : 'برای ضربه، کلیک کنید و به عقب بکشید';
+          updateUI(msg, sub);
+        } else if (keptTurn) {
+          updateUI(`ضربه عالی! همچنان نوبت ${getPlayerName(currentPlayer)}`, 'به بازی ادامه دهید');
+        } else {
+          currentPlayer = otherPlayer;
+          updateUI(`نوبت ${getPlayerName(currentPlayer)}`, 'برای ضربه، کلیک کنید و به عقب بکشید');
+        }
+
+        pocketedThisTurn = [];
+        firstHitBall = null;
+
+        // Trigger AI turn if applicable
+        if (!gameOver && gameMode === 'ai' && currentPlayer === 2) {
+          scheduleAITurn();
+        }
+      }
+
+      // Simple Smart AI
+      function scheduleAITurn() {
+        if (aiThinking || gameOver) return;
+        aiThinking = true;
+
+        if (ballInHand) {
+          // Place cue ball in a valid spot
+          let px = PLAY_X + PLAY_W * 0.25;
+          let py = PLAY_Y + PLAY_H / 2;
+          for (let tries = 0; tries < 40; tries++) {
+            const tx = PLAY_X + BALL_R * 3 + Math.random() * (PLAY_W * 0.5);
+            const ty = PLAY_Y + BALL_R * 3 + Math.random() * (PLAY_H - BALL_R * 6);
+            if (isPositionValidForCue(tx, ty)) {
+              px = tx;
+              py = ty;
+              break;
+            }
+          }
+          const cue = getCueBall();
+          cue.x = px;
+          cue.y = py;
+          ballInHand = false;
+        }
+
+        updateUI('نوبت هوش مصنوعی', 'در حال بررسی بهترین ضربه...');
+
+        setTimeout(() => {
+          if (gameOver || currentPlayer !== 2) {
+            aiThinking = false;
+            return;
+          }
+
+          const cue = getCueBall();
+          const aiGroup = playerGroups[2];
+          let targets = balls.filter(b => {
+            if (b.pocketed || b.id === 0) return false;
+            if (!aiGroup) return b.id !== 8;
+            return b.type === aiGroup;
+          });
+
+          if (targets.length === 0) {
+            targets = balls.filter(b => b.id === 8 && !b.pocketed);
+          }
+
+          let bestShot = null;
+          let bestScore = -Infinity;
+
+          for (const t of targets) {
+            for (const p of pockets) {
+              const toPocketX = p.x - t.x;
+              const toPocketY = p.y - t.y;
+              const distTP = Math.hypot(toPocketX, toPocketY);
+              if (distTP < 1) continue;
+
+              const ux = toPocketX / distTP;
+              const uy = toPocketY / distTP;
+
+              // Ghost ball position
+              const gx = t.x - ux * (BALL_R * 2);
+              const gy = t.y - uy * (BALL_R * 2);
+
+              const toGhostX = gx - cue.x;
+              const toGhostY = gy - cue.y;
+              const distCG = Math.hypot(toGhostX, toGhostY);
+              if (distCG < 1) continue;
+
+              const cux = toGhostX / distCG;
+              const cuy = toGhostY / distCG;
+
+              // Alignment dot product (closer to 1 = straighter shot)
+              const dot = cux * ux + cuy * uy;
+              if (dot < 0.25) continue;
+
+              const score = dot * 120 - distTP * 0.08 - distCG * 0.06;
+              if (score > bestScore) {
+                bestScore = score;
+                bestShot = {
+                  angle: Math.atan2(toGhostY, toGhostX),
+                  power: Math.min(MAX_POWER * 0.78, Math.max(9, (distCG + distTP) * 0.032))
+                };
+              }
+            }
+          }
+
+          if (!bestShot && targets.length > 0) {
+            const t = targets[0];
+            bestShot = {
+              angle: Math.atan2(t.y - cue.y, t.x - cue.x),
+              power: 14
+            };
+          }
+
+          if (bestShot) {
+            // Slight human-like inaccuracy
+            const jitter = (Math.random() - 0.5) * 0.045;
+            aimAngle = bestShot.angle + jitter;
+            shootCue(aimAngle, bestShot.power);
+          }
+
+          aiThinking = false;
+        }, 850);
+      }
+
+      function shootCue(angle, power) {
+        const cue = getCueBall();
+        if (cue.pocketed || isMoving || gameOver) return;
+        cue.vx = Math.cos(angle) * power;
+        cue.vy = Math.sin(angle) * power;
+        isMoving = true;
+        pocketedThisTurn = [];
+        firstHitBall = null;
+        playSound('cue', power / MAX_POWER);
+        setPowerUI(0);
+      }
+
+      // Raycast for Aiming Guide
+      function computeAimGuide(cue, angle) {
+        const dx = Math.cos(angle);
+        const dy = Math.sin(angle);
+        let minT = Infinity;
+        let hitBall = null;
+
+        // Check walls
+        if (dx < 0) minT = Math.min(minT, (PLAY_X + BALL_R - cue.x) / dx);
+        if (dx > 0) minT = Math.min(minT, (PLAY_X + PLAY_W - BALL_R - cue.x) / dx);
+        if (dy < 0) minT = Math.min(minT, (PLAY_Y + BALL_R - cue.y) / dy);
+        if (dy > 0) minT = Math.min(minT, (PLAY_Y + PLAY_H - BALL_R - cue.y) / dy);
+
+        // Check balls
+        const combinedR = BALL_R * 2;
+        for (let i = 1; i < balls.length; i++) {
+          const b = balls[i];
+          if (b.pocketed) continue;
+          const fx = cue.x - b.x;
+          const fy = cue.y - b.y;
+          const proj = fx * dx + fy * dy;
+          if (proj >= 0) continue; // Behind ray
+          const c = fx * fx + fy * fy - combinedR * combinedR;
+          const disc = proj * proj - c;
+          if (disc >= 0) {
+            const t = -proj - Math.sqrt(disc);
+            if (t > 0 && t < minT) {
+              minT = t;
+              hitBall = b;
+            }
+          }
+        }
+
+        return {
+          endX: cue.x + dx * minT,
+          endY: cue.y + dy * minT,
+          hitBall
+        };
+      }
+
+      // Drawing Functions
+      function drawTable() {
+        // Outer wooden frame
+        const woodGrad = ctx.createLinearGradient(0, 0, W, H);
+        woodGrad.addColorStop(0, '#5c3317');
+        woodGrad.addColorStop(0.5, '#3e210e');
+        woodGrad.addColorStop(1, '#5c3317');
+        ctx.fillStyle = woodGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Inner cushion bevel
+        ctx.fillStyle = '#0c4d2c';
+        ctx.fillRect(PLAY_X - 8, PLAY_Y - 8, PLAY_W + 16, PLAY_H + 16);
+
+        // Felt surface
+        const feltGrad = ctx.createRadialGradient(W / 2, H / 2, 60, W / 2, H / 2, W * 0.65);
+        feltGrad.addColorStop(0, '#17854b');
+        feltGrad.addColorStop(1, '#0e5c33');
+        ctx.fillStyle = feltGrad;
+        ctx.fillRect(PLAY_X, PLAY_Y, PLAY_W, PLAY_H);
+
+        // Baulk line & head spot
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(PLAY_X + PLAY_W * 0.25, PLAY_Y);
+        ctx.lineTo(PLAY_X + PLAY_W * 0.25, PLAY_Y + PLAY_H);
+        ctx.stroke();
+
+        // Foot spot
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.beginPath();
+        ctx.arc(PLAY_X + PLAY_W * 0.72, PLAY_Y + PLAY_H / 2, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Diamond sights on rails
+        ctx.fillStyle = '#e2c07d';
+        const sightsX = [0.125, 0.25, 0.375, 0.625, 0.75, 0.875];
+        for (const f of sightsX) {
+          const sx = PLAY_X + PLAY_W * f;
+          drawDiamond(sx, RAIL / 2);
+          drawDiamond(sx, H - RAIL / 2);
+        }
+        const sightsY = [0.25, 0.5, 0.75];
+        for (const f of sightsY) {
+          const sy = PLAY_Y + PLAY_H * f;
+          drawDiamond(RAIL / 2, sy);
+          drawDiamond(W - RAIL / 2, sy);
+        }
+
+        // Pockets
+        for (const p of pockets) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, POCKET_R + 3, 0, Math.PI * 2);
+          ctx.fillStyle = '#261408';
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, POCKET_R, 0, Math.PI * 2);
+          ctx.fillStyle = '#070a0d';
+          ctx.fill();
+        }
+      }
+
+      function drawDiamond(x, y) {
+        ctx.beginPath();
+        ctx.moveTo(x, y - 4);
+        ctx.lineTo(x + 4, y);
+        ctx.lineTo(x, y + 4);
+        ctx.lineTo(x - 4, y);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawBall(b) {
+        if (b.pocketed) return;
+
+        // Shadow
+        ctx.beginPath();
+        ctx.arc(b.x + 3, b.y + 4, BALL_R, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.fill();
+
+        // Base sphere
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
+        ctx.clip();
+
+        if (b.type === 'stripe') {
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(b.x - BALL_R, b.y - BALL_R, BALL_R * 2, BALL_R * 2);
+          ctx.fillStyle = b.color;
+          ctx.fillRect(b.x - BALL_R, b.y - BALL_R * 0.55, BALL_R * 2, BALL_R * 1.1);
+        } else {
+          ctx.fillStyle = b.color;
+          ctx.fillRect(b.x - BALL_R, b.y - BALL_R, BALL_R * 2, BALL_R * 2);
+        }
+
+        // Number circle
+        if (b.id > 0) {
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, BALL_R * 0.48, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+
+          ctx.fillStyle = '#111827';
+          ctx.font = 'bold 9.5px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(b.id), b.x, b.y + 0.5);
+        }
+
+        // 3D Glossy shading
+        const grad = ctx.createRadialGradient(
+          b.x - BALL_R * 0.35,
+          b.y - BALL_R * 0.35,
+          BALL_R * 0.1,
+          b.x,
+          b.y,
+          BALL_R
+        );
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+        grad.addColorStop(0.35, 'rgba(255, 255, 255, 0.08)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0.38)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(b.x - BALL_R, b.y - BALL_R, BALL_R * 2, BALL_R * 2);
+
+        ctx.restore();
+      }
+
+      function drawAimAndCue() {
+        const cue = getCueBall();
+        if (isMoving || gameOver || cue.pocketed || (gameMode === 'ai' && currentPlayer === 2)) return;
+
+        if (ballInHand) {
+          const valid = isPositionValidForCue(mouse.x, mouse.y);
+          ctx.beginPath();
+          ctx.arc(mouse.x, mouse.y, BALL_R, 0, Math.PI * 2);
+          ctx.fillStyle = valid ? 'rgba(255, 255, 255, 0.7)' : 'rgba(239, 71, 111, 0.6)';
+          ctx.fill();
+          ctx.strokeStyle = valid ? '#06d6a0' : '#ef476f';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          return;
+        }
+
+        // Aiming guide line
+        const guide = computeAimGuide(cue, aimAngle);
+
+        ctx.save();
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(cue.x, cue.y);
+        ctx.lineTo(guide.endX, guide.endY);
+        ctx.stroke();
+
+        // Ghost ball circle
+        ctx.setLineDash([]);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(guide.endX, guide.endY, BALL_R, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Target ball predicted direction
+        if (guide.hitBall) {
+          const tx = guide.hitBall.x - guide.endX;
+          const ty = guide.hitBall.y - guide.endY;
+          const len = Math.hypot(tx, ty) || 1;
+          ctx.strokeStyle = 'rgba(255, 209, 102, 0.85)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(guide.hitBall.x, guide.hitBall.y);
+          ctx.lineTo(guide.hitBall.x + (tx / len) * 65, guide.hitBall.y + (ty / len) * 65);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // Draw Cue Stick
+        const pullback = isDragging ? (currentPower / MAX_POWER) * 95 : 0;
+        const stickStart = BALL_R + 14 + pullback;
+        const stickLen = 250;
+
+        ctx.save();
+        ctx.translate(cue.x, cue.y);
+        ctx.rotate(aimAngle + Math.PI);
+
+        // Stick shadow
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(stickStart, 4);
+        ctx.lineTo(stickStart + stickLen, 4);
+        ctx.stroke();
+
+        // Cue shaft
+        const stickGrad = ctx.createLinearGradient(stickStart, 0, stickStart + stickLen, 0);
+        stickGrad.addColorStop(0, '#38bdf8'); // Chalk tip
+        stickGrad.addColorStop(0.03, '#f8fafc');
+        stickGrad.addColorStop(0.55, '#e7c391');
+        stickGrad.addColorStop(0.56, '#4a2511');
+        stickGrad.addColorStop(1, '#231107');
+
+        ctx.strokeStyle = stickGrad;
+        ctx.lineWidth = 6.5;
+        ctx.beginPath();
+        ctx.moveTo(stickStart, 0);
+        ctx.lineTo(stickStart + stickLen, 0);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      function render() {
+        updatePhysics();
+        drawTable();
+        for (const b of balls) {
+          drawBall(b);
+        }
+        drawAimAndCue();
+        requestAnimationFrame(render);
+      }
+
+      // Coordinate helper
+      function getCanvasPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: ((clientX - rect.left) / rect.width) * W,
+          y: ((clientY - rect.top) / rect.height) * H
+        };
+      }
+
+      function handlePointerDown(e) {
+        if (isMoving || gameOver || (gameMode === 'ai' && currentPlayer === 2)) return;
+        ensureAudio();
+        const pos = getCanvasPos(e);
+        mouse = pos;
+
+        if (ballInHand) {
+          if (isPositionValidForCue(pos.x, pos.y)) {
+            const cue = getCueBall();
+            cue.x = pos.x;
+            cue.y = pos.y;
+            ballInHand = false;
+            updateUI(`نوبت ${getPlayerName(currentPlayer)}`, 'برای ضربه، کلیک کنید و به عقب بکشید');
+          }
+          return;
+        }
+
+        const cue = getCueBall();
+        aimAngle = Math.atan2(pos.y - cue.y, pos.x - cue.x);
+        isDragging = true;
+        dragStart = pos;
+        currentPower = 0;
+        setPowerUI(0);
+      }
+
+      function handlePointerMove(e) {
+        const pos = getCanvasPos(e);
+        mouse = pos;
+
+        if (isMoving || gameOver || ballInHand || (gameMode === 'ai' && currentPlayer === 2)) return;
+
+        const cue = getCueBall();
+        if (!isDragging) {
+          aimAngle = Math.atan2(pos.y - cue.y, pos.x - cue.x);
+        } else {
+          // Pull back along opposite of aimAngle
+          const dx = pos.x - dragStart.x;
+          const dy = pos.y - dragStart.y;
+          const pull = -(dx * Math.cos(aimAngle) + dy * Math.sin(aimAngle));
+          const dist = Math.max(0, pull);
+          currentPower = Math.min(MAX_POWER, (dist / 160) * MAX_POWER);
+          setPowerUI((currentPower / MAX_POWER) * 100);
+        }
+      }
+
+      function handlePointerUp() {
+        if (!isDragging) return;
+        isDragging = false;
+        if (currentPower > 1.2) {
+          shootCue(aimAngle, currentPower);
+        } else {
+          setPowerUI(0);
+        }
+        currentPower = 0;
+      }
+
+      // Mouse & Touch Events
+      canvas.addEventListener('mousedown', handlePointerDown);
+      window.addEventListener('mousemove', handlePointerMove);
+      window.addEventListener('mouseup', handlePointerUp);
+
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handlePointerDown(e);
+      }, { passive: false });
+
+      window.addEventListener('touchmove', (e) => {
+        if (isDragging || ballInHand) e.preventDefault();
+        if (e.touches.length > 0) handlePointerMove(e);
+      }, { passive: false });
+
+      window.addEventListener('touchend', handlePointerUp);
+
+      // Button Events
+      btnMode2P.addEventListener('click', () => {
+        gameMode = '2p';
+        btnMode2P.classList.add('active');
+        btnModeAI.classList.remove('active');
+        initGame();
+      });
+
+      btnModeAI.addEventListener('click', () => {
+        gameMode = 'ai';
+        btnModeAI.classList.add('active');
+        btnMode2P.classList.remove('active');
+        initGame();
+      });
+
+      btnSound.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        btnSound.textContent = soundEnabled ? '🔊 صدا: روشن' : '🔇 صدا: خاموش';
+      });
+
+      btnRestart.addEventListener('click', initGame);
+      btnPlayAgain.addEventListener('click', initGame);
+
+      // Start
+      initGame();
+      requestAnimationFrame(render);
+    })();
+  </script>
+</body>
+</html>
